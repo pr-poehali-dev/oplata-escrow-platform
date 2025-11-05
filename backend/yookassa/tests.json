@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Get payment status requires paymentId",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

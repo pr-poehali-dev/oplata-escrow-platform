@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Health check endpoint",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "OPLATA API v1.0",
+        "totalOrders": 0,
+        "endpoints": {}
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

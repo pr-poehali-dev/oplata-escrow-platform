@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: oplata_postgres
+    environment:
+      POSTGRES_DB: oplata
+      POSTGRES_USER: oplata_user
+      POSTGRES_PASSWORD: oplata_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db_migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - oplata_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oplata_user -d oplata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: oplata_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - oplata_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oplata_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://localhost:8080
+      - VITE_AUTH_URL=https://functions.poehali.dev/3934f29b-6f78-4605-8e00-6f37af2c5b56
+      - VITE_ORDERS_URL=https://functions.poehali.dev/bcb3516d-776e-407d-a270-7f081e3ea386
+      - VITE_YOOKASSA_URL=https://functions.poehali.dev/9694571b-df2d-4986-a292-5e3a2f6f13f4
+    networks:
+      - oplata_network
+    depends_on:
+      - postgres
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    container_name: oplata_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - oplata_network
+    depends_on:
+      - frontend
+
+networks:
+  oplata_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
